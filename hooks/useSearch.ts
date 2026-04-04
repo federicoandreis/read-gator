@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { KnowledgeObjectRow } from '../services/storage';
 import { searchKnowledgeObjects } from '../services/storage';
+import { useLibraryContext } from '../providers/LibraryProvider';
 
 interface UseSearchResult {
   results: KnowledgeObjectRow[];
@@ -10,9 +11,14 @@ interface UseSearchResult {
 export function useSearch(query: string): UseSearchResult {
   const [results, setResults] = useState<KnowledgeObjectRow[]>([]);
   const [isSearching, setIsSearching] = useState(false);
+  const { items } = useLibraryContext();
+  const itemCount = items.length;
+  const latestQuery = useRef(query);
+  latestQuery.current = query;
 
   useEffect(() => {
-    if (!query.trim()) {
+    const trimmed = query.trim();
+    if (!trimmed) {
       setResults([]);
       return;
     }
@@ -20,7 +26,7 @@ export function useSearch(query: string): UseSearchResult {
     setIsSearching(true);
     const timer = setTimeout(async () => {
       try {
-        const found = await searchKnowledgeObjects(query.trim());
+        const found = await searchKnowledgeObjects(latestQuery.current.trim());
         setResults(found);
       } catch {
         setResults([]);
@@ -30,7 +36,7 @@ export function useSearch(query: string): UseSearchResult {
     }, 300);
 
     return () => clearTimeout(timer);
-  }, [query]);
+  }, [query, itemCount]);
 
   return { results, isSearching };
 }

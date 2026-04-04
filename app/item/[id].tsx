@@ -1,14 +1,25 @@
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { useLocalSearchParams } from 'expo-router';
+import {
+  ActivityIndicator,
+  Alert,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import { router, useLocalSearchParams } from 'expo-router';
 import type { KnowledgeObject } from '../../types/knowledgeObject';
 import { loadKnowledgeObject } from '../../services/storage';
 import { TagList } from '../../components/knowledge/TagList';
+import { useDelete } from '../../hooks/useDelete';
 
 export default function ItemScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const [item, setItem] = useState<KnowledgeObject | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const { deleteItem } = useDelete();
 
   useEffect(() => {
     if (!id) return;
@@ -16,6 +27,35 @@ export default function ItemScreen() {
       .then(setItem)
       .catch(() => setError('Could not load this knowledge object.'));
   }, [id]);
+
+  function handleDelete() {
+    if (!id) return;
+    Alert.alert(
+      'Delete item',
+      'This will permanently remove the item from your library.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            setIsDeleting(true);
+            try {
+              await deleteItem(id);
+              if (router.canGoBack()) {
+                router.back();
+              } else {
+                router.replace('/(tabs)' as never);
+              }
+            } catch {
+              setIsDeleting(false);
+              Alert.alert('Error', 'Could not delete this item. Please try again.');
+            }
+          },
+        },
+      ],
+    );
+  }
 
   if (error) {
     return (
@@ -51,9 +91,7 @@ export default function ItemScreen() {
 
       <Section heading="Key points">
         {item.key_points.map((p, i) => (
-          <Text key={i} style={styles.bullet}>
-            • {p}
-          </Text>
+          <Text key={i} style={styles.bullet}>• {p}</Text>
         ))}
       </Section>
 
@@ -83,6 +121,16 @@ export default function ItemScreen() {
         {item.processing.model} · Prompt {item.processing.prompt_version} ·{' '}
         {item.confidence.extraction_quality} confidence
       </Text>
+
+      <TouchableOpacity
+        style={[styles.deleteButton, isDeleting && styles.deleteButtonDisabled]}
+        onPress={handleDelete}
+        disabled={isDeleting}
+      >
+        <Text style={styles.deleteButtonText}>
+          {isDeleting ? 'Deleting…' : 'Delete item'}
+        </Text>
+      </TouchableOpacity>
     </ScrollView>
   );
 }
@@ -151,5 +199,21 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#aaa',
     marginTop: 8,
+  },
+  deleteButton: {
+    marginTop: 16,
+    padding: 14,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#e74c3c',
+    alignItems: 'center',
+  },
+  deleteButtonDisabled: {
+    opacity: 0.4,
+  },
+  deleteButtonText: {
+    color: '#e74c3c',
+    fontSize: 15,
+    fontWeight: '500',
   },
 });

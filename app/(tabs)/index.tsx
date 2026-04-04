@@ -1,20 +1,59 @@
+import { useMemo, useState } from 'react';
 import { FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Link } from 'expo-router';
 import { useLibrary } from '../../hooks/useLibrary';
 import { KnowledgeCard } from '../../components/knowledge/KnowledgeCard';
+import { TagFilterBar } from '../../components/knowledge/TagFilterBar';
+import type { LibraryItem } from '../../types/libraryItem';
+import { itemId } from '../../types/libraryItem';
 
 export default function LibraryScreen() {
   const { items, isLoading } = useLibrary();
+  const [selectedTag, setSelectedTag] = useState<string | null>(null);
+
+  const allTags = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const item of items) {
+      if (item.kind !== 'complete') continue;
+      const topics = item.data.tags_topics
+        ? item.data.tags_topics.split(',').filter(Boolean)
+        : [];
+      for (const t of topics) {
+        counts.set(t, (counts.get(t) ?? 0) + 1);
+      }
+    }
+    return [...counts.entries()]
+      .sort((a, b) => b[1] - a[1])
+      .map(([tag]) => tag);
+  }, [items]);
+
+  const visibleItems = useMemo<LibraryItem[]>(() => {
+    if (!selectedTag) return items;
+    return items.filter((item) => {
+      if (item.kind !== 'complete') return true; // always show in-progress cards
+      const topics = item.data.tags_topics
+        ? item.data.tags_topics.split(',').filter(Boolean)
+        : [];
+      return topics.includes(selectedTag);
+    });
+  }, [items, selectedTag]);
 
   return (
     <View style={styles.container}>
+      <TagFilterBar
+        tags={allTags}
+        selected={selectedTag}
+        onSelect={setSelectedTag}
+      />
       <FlatList
-        data={items}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => <KnowledgeCard row={item} />}
+        data={visibleItems}
+        keyExtractor={(item) => itemId(item)}
+        renderItem={({ item }) => <KnowledgeCard item={item} />}
         ListEmptyComponent={
           isLoading ? (
             <Text style={styles.empty}>Loading…</Text>
+          ) : selectedTag ? (
+            <Text style={styles.empty}>No items tagged "{selectedTag}".</Text>
           ) : (
             <Text style={styles.empty}>No items yet. Tap + to add your first.</Text>
           )

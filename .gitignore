@@ -23,3 +23,10 @@ yarn-error.log*
 
 expo-env.d.ts
 # @end expo-cli
+
+# development docs (local only)
+CLAUDE.md
+CONTENT_TYPES.md
+PRD.md
+windsurfrules
+.windsurfrules
