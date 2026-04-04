@@ -4,6 +4,8 @@ A mobile-first knowledge capture app that turns web links and pasted text into s
 
 Share a URL or paste some text. ReadGator fetches the content, sends it to a language model, and produces a clean one-pager: summary, key points, tags, entities, and context. Everything is stored as plain markdown on your device.
 
+**Current status: MVP complete.** All core features are built and working on iOS via Expo Go.
+
 ---
 
 ## What it does
@@ -12,7 +14,10 @@ Share a URL or paste some text. ReadGator fetches the content, sends it to a lan
 - **Extract** — fetches and strips web pages to readable content
 - **Process** — sends content to a configured LLM; validates and sanitises the response
 - **Store** — writes a structured `.md` file per item; indexes metadata in SQLite for fast search
-- **Browse** — card-based library feed, full-text search, tag filtering
+- **Browse** — card-based library feed with optimistic processing queue
+- **Filter** — tag bar sorted by frequency; tap to filter, tap again to clear
+- **Search** — full-text search across titles, tags, and domains
+- **Delete** — remove items from the library and device storage
 
 ## What it is not
 
@@ -48,6 +53,7 @@ Markdown generator           (services/markdown/generator.ts)
 - All LLM calls go through a `LLMService` interface — the rest of the app never knows which provider is active.
 - Prompts live in `prompts/` and are version-tracked. Each knowledge object records which prompt version produced it.
 - LLM responses are validated and sanitised before use; the app never trusts raw model output.
+- Captures are fire-and-forget: the UI enqueues immediately and the pipeline runs in the background.
 
 ---
 
@@ -73,26 +79,27 @@ Markdown generator           (services/markdown/generator.ts)
 read-gator/
 ├── app/                        # Expo Router screens
 │   ├── (tabs)/
-│   │   ├── index.tsx           # Library feed
+│   │   ├── index.tsx           # Library feed with tag filter bar
 │   │   ├── search.tsx          # Full-text search
 │   │   └── settings.tsx        # LLM configuration
 │   ├── capture.tsx             # Add item (modal)
-│   └── item/[id].tsx           # Knowledge object detail
+│   └── item/[id].tsx           # Knowledge object detail + delete
 ├── components/
-│   ├── knowledge/              # KnowledgeCard, TagList
+│   ├── knowledge/              # KnowledgeCard, TagList, TagFilterBar
 │   └── ui/                     # Generic primitives (to grow)
-├── hooks/                      # useCapture, useLibrary, useSearch, useSettings
+├── hooks/                      # useCapture, useDelete, useLibrary,
+│                               # useSearch, useSettings
 ├── providers/                  # LibraryProvider (global state)
 ├── services/
 │   ├── extraction/             # url.ts, text.ts
 │   ├── llm/                    # types.ts, ollama.ts, validation.ts
 │   ├── markdown/               # generator.ts, parser.ts
 │   └── storage/                # database.ts, files.ts, index.ts
-├── types/                      # Shared TypeScript interfaces
+├── types/                      # KnowledgeObject, LibraryItem,
+│                               # ExtractedContent, AppError, ...
 ├── prompts/v1/                 # Versioned LLM prompt templates
 ├── __tests__/                  # Unit tests mirroring source structure
-└── docs/                       # CONTENT_TYPES.md, ARCHITECTURE.md (planned)
-
+└── docs/                       # CONTENT_TYPES.md
 ```
 
 ---
@@ -209,7 +216,7 @@ The rest of the app is unaffected — the abstraction handles it.
 
 | Phase | Scope |
 |---|---|
-| **MVP** *(current)* | Manual URL + text capture, LLM processing, markdown generation, library, search, tag filtering |
+| **MVP** ✅ | URL + text capture, LLM processing, markdown generation, optimistic processing queue, library, tag filtering, full-text search, delete |
 | **v1.0** | iOS share extension, duplicate detection, improved extraction reliability, onboarding |
 | **v1.1** | PDF ingestion, image/OCR ingestion, Obsidian export, browser extension, custom templates |
 | **v2.0** | Knowledge graph visualisation, optional cloud sync, web companion, user accounts |
@@ -223,3 +230,9 @@ The rest of the app is unaffected — the abstraction handles it.
 - `feature/*` — one branch per feature or fix
 
 PRs go `feature/* → dev → main`.
+
+---
+
+## Coding standards
+
+British English throughout. TypeScript strict mode, no `any`. See `.windsurfrules` and `CLAUDE.md` for the full coding conventions used in this project.
