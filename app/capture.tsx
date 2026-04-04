@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import {
-  ActivityIndicator,
   Alert,
   KeyboardAvoidingView,
   Platform,
@@ -17,9 +16,17 @@ import { looksLikeUrl } from '../services/extraction/text';
 
 export default function CaptureScreen() {
   const [input, setValue] = useState('');
-  const { capture, isCapturing, error } = useCapture();
+  const { enqueueCapture } = useCapture();
 
-  async function handleSubmit() {
+  function dismiss() {
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace('/(tabs)' as never);
+    }
+  }
+
+  function handleSubmit() {
     const trimmed = input.trim();
     if (!trimmed) return;
 
@@ -28,25 +35,21 @@ export default function CaptureScreen() {
     if (!isUrl && trimmed.includes('http')) {
       Alert.alert(
         'Process as URL?',
-        'This looks like it contains a URL. Would you like to fetch and process the page?',
+        'This looks like it contains a URL. Shall I fetch and process the page?',
         [
-          { text: 'Process as text', onPress: () => doCapture(trimmed, false) },
-          { text: 'Fetch URL', onPress: () => doCapture(trimmed, true), style: 'default' },
+          { text: 'Use as text', onPress: () => submit(trimmed, false) },
+          { text: 'Fetch URL', onPress: () => submit(trimmed, true), style: 'default' },
         ],
       );
       return;
     }
 
-    await doCapture(trimmed, isUrl);
+    submit(trimmed, isUrl);
   }
 
-  async function doCapture(text: string, asUrl: boolean) {
-    try {
-      await capture(text, asUrl);
-      router.back();
-    } catch {
-      // Error displayed via hook state
-    }
+  function submit(text: string, asUrl: boolean) {
+    enqueueCapture(text, asUrl);
+    dismiss();
   }
 
   return (
@@ -68,18 +71,16 @@ export default function CaptureScreen() {
           textAlignVertical="top"
         />
 
-        {error ? <Text style={styles.errorText}>{error}</Text> : null}
-
         <TouchableOpacity
-          style={[styles.button, (!input.trim() || isCapturing) && styles.buttonDisabled]}
+          style={[styles.button, !input.trim() && styles.buttonDisabled]}
           onPress={handleSubmit}
-          disabled={!input.trim() || isCapturing}
+          disabled={!input.trim()}
         >
-          {isCapturing ? (
-            <ActivityIndicator color="#fff" />
-          ) : (
-            <Text style={styles.buttonText}>Capture</Text>
-          )}
+          <Text style={styles.buttonText}>Capture</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.cancelButton} onPress={dismiss}>
+          <Text style={styles.cancelText}>Cancel</Text>
         </TouchableOpacity>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -106,10 +107,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#f0f0f0',
     fontSize: 15,
   },
-  errorText: {
-    color: '#c0392b',
-    fontSize: 14,
-  },
   button: {
     backgroundColor: '#007AFF',
     padding: 16,
@@ -124,5 +121,13 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: '600',
+  },
+  cancelButton: {
+    alignItems: 'center',
+    padding: 12,
+  },
+  cancelText: {
+    fontSize: 15,
+    color: '#888',
   },
 });

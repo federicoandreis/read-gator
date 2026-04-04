@@ -21,7 +21,7 @@ export default function SearchScreen() {
       <FlatList
         data={results}
         keyExtractor={(item) => item.id}
-        renderItem={({ item }) => <KnowledgeCard row={item} />}
+        renderItem={({ item }) => <KnowledgeCard item={{ kind: 'complete', data: item }} />}
         ListEmptyComponent={
           query.length > 0 ? (
             <Text style={styles.empty}>
