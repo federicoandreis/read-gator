@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { useLibraryContext } from '../providers/LibraryProvider';
 import { extractFromUrl } from '../services/extraction/url';
 import { extractFromText } from '../services/extraction/text';
@@ -9,9 +8,7 @@ import { isAppError } from '../types/errors';
 import type { KnowledgeObjectRow } from '../services/storage';
 
 interface UseCaptureResult {
-  capture: (input: string, asUrl: boolean) => Promise<void>;
-  isCapturing: boolean;
-  error: string | null;
+  enqueueCapture: (input: string, asUrl: boolean) => void;
 }
 
 let pendingIdCounter = 0;
@@ -20,18 +17,16 @@ function generatePendingId(): string {
 }
 
 export function useCapture(): UseCaptureResult {
-  const [isCapturing, setIsCapturing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const { dispatch } = useLibraryContext();
   const { settings } = useSettings();
 
-  async function capture(input: string, asUrl: boolean): Promise<void> {
-    setIsCapturing(true);
-    setError(null);
-
+  function enqueueCapture(input: string, asUrl: boolean): void {
     const pendingId = generatePendingId();
     dispatch({ type: 'ENQUEUE', id: pendingId, input });
+    runPipeline(pendingId, input, asUrl);
+  }
 
+  async function runPipeline(pendingId: string, input: string, asUrl: boolean): Promise<void> {
     try {
       const extracted = asUrl
         ? await extractFromUrl(input)
@@ -68,12 +63,8 @@ export function useCapture(): UseCaptureResult {
         ? err.message
         : `Something went wrong: ${err instanceof Error ? err.message : String(err)}`;
       dispatch({ type: 'FAIL', id: pendingId, error: message });
-      setError(message);
-      throw err;
-    } finally {
-      setIsCapturing(false);
     }
   }
 
-  return { capture, isCapturing, error };
+  return { enqueueCapture };
 }
