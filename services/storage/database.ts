@@ -115,8 +115,10 @@ export async function searchObjects(query: string): Promise<KnowledgeObjectRow[]
   const pattern = `%${query}%`;
   return database.getAllAsync<KnowledgeObjectRow>(
     `SELECT * FROM knowledge_objects
-     WHERE title LIKE ? OR tags_topics LIKE ? OR tags_domain LIKE ? OR source_url LIKE ?
+     WHERE title LIKE ? OR tags_topics LIKE ? OR tags_domain LIKE ?
+        OR source_url LIKE ? OR source_domain LIKE ?
      ORDER BY captured_at DESC`,
+    pattern,
     pattern,
     pattern,
     pattern,
