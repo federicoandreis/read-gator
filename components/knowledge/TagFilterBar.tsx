@@ -9,6 +9,10 @@ interface TagFilterBarProps {
 export function TagFilterBar({ tags, selected, onSelect }: TagFilterBarProps) {
   if (tags.length === 0) return null;
 
+  const sorted = selected
+    ? [selected, ...tags.filter((t) => t !== selected)]
+    : tags;
+
   return (
     <View style={styles.wrapper}>
       <ScrollView
@@ -16,7 +20,7 @@ export function TagFilterBar({ tags, selected, onSelect }: TagFilterBarProps) {
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.row}
       >
-        {tags.map((tag) => {
+        {sorted.map((tag) => {
           const active = tag === selected;
           return (
             <TouchableOpacity
