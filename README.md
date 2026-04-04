@@ -91,9 +91,8 @@ read-gator/
 ├── types/                      # Shared TypeScript interfaces
 ├── prompts/v1/                 # Versioned LLM prompt templates
 ├── __tests__/                  # Unit tests mirroring source structure
-├── docs/                       # CONTENT_TYPES.md, ARCHITECTURE.md (planned)
-├── PRD.md                      # Full product spec and roadmap
-└── CLAUDE.md                   # AI assistant instructions
+└── docs/                       # CONTENT_TYPES.md, ARCHITECTURE.md (planned)
+
 ```
 
 ---
@@ -215,8 +214,6 @@ The rest of the app is unaffected — the abstraction handles it.
 | **v1.1** | PDF ingestion, image/OCR ingestion, Obsidian export, browser extension, custom templates |
 | **v2.0** | Knowledge graph visualisation, optional cloud sync, web companion, user accounts |
 
-See [`PRD.md`](PRD.md) for the full product spec, schema, and open questions.
-
 ---
 
 ## Branching
@@ -226,9 +223,3 @@ See [`PRD.md`](PRD.md) for the full product spec, schema, and open questions.
 - `feature/*` — one branch per feature or fix
 
 PRs go `feature/* → dev → main`.
-
----
-
-## Coding standards
-
-British English throughout. TypeScript strict mode, no `any`. See [`.windsurfrules`](.windsurfrules) and [`CLAUDE.md`](CLAUDE.md) for the full coding conventions used in this project.
