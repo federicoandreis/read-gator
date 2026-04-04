@@ -1,8 +1,8 @@
 import { useLibraryContext } from '../providers/LibraryProvider';
-import type { KnowledgeObjectRow } from '../services/storage';
+import type { LibraryItem } from '../types/libraryItem';
 
 interface UseLibraryResult {
-  items: KnowledgeObjectRow[];
+  items: LibraryItem[];
   isLoading: boolean;
   refresh: () => Promise<void>;
 }

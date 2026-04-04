@@ -10,8 +10,8 @@ export default function LibraryScreen() {
     <View style={styles.container}>
       <FlatList
         data={items}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => <KnowledgeCard row={item} />}
+        keyExtractor={(item) => item.kind === 'complete' ? item.data.id : item.id}
+        renderItem={({ item }) => <KnowledgeCard item={item} />}
         ListEmptyComponent={
           isLoading ? (
             <Text style={styles.empty}>Loading…</Text>

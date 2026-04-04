@@ -14,6 +14,11 @@ interface UseCaptureResult {
   error: string | null;
 }
 
+let pendingIdCounter = 0;
+function generatePendingId(): string {
+  return `pending-${Date.now()}-${++pendingIdCounter}`;
+}
+
 export function useCapture(): UseCaptureResult {
   const [isCapturing, setIsCapturing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -23,6 +28,9 @@ export function useCapture(): UseCaptureResult {
   async function capture(input: string, asUrl: boolean): Promise<void> {
     setIsCapturing(true);
     setError(null);
+
+    const pendingId = generatePendingId();
+    dispatch({ type: 'ENQUEUE', id: pendingId, input });
 
     try {
       const extracted = asUrl
@@ -54,11 +62,12 @@ export function useCapture(): UseCaptureResult {
         model: obj.processing.model,
       };
 
-      dispatch({ type: 'ADD_ITEM', item: row });
+      dispatch({ type: 'COMPLETE', id: pendingId, data: row });
     } catch (err) {
       const message = isAppError(err)
         ? err.message
         : `Something went wrong: ${err instanceof Error ? err.message : String(err)}`;
+      dispatch({ type: 'FAIL', id: pendingId, error: message });
       setError(message);
       throw err;
     } finally {
